@@ -4,6 +4,8 @@ from flask import Flask, request, jsonify
 import os
 import threading
 from datetime import datetime
+import json
+
 from utils import (
     enviar_mensaje_whatsapp,
     guardar_usuario_temporal,
@@ -15,6 +17,7 @@ from chatbot_agent import responder_con_ia
 
 app = Flask(__name__)
 
+# Lista de nombres de productos que consideramos "terapias"
 PRODUCTOS_TERAPIA = [
     "Tratamiento completo 3 sesiones",
     "Terapia individual"
@@ -22,6 +25,7 @@ PRODUCTOS_TERAPIA = [
 
 # Diccionario para guardar timers de recordatorio de compra en curso
 recordatorios_compra = {}  # clave: número, valor: threading.Timer
+
 
 def enviar_recordatorio_compra(numero):
     """
@@ -38,21 +42,24 @@ def enviar_recordatorio_compra(numero):
     # Eliminamos el timer de la memoria para no repetir
     recordatorios_compra.pop(numero, None)
 
+
 def seguimiento_dia6(numero):
     """
-    A los 6 días de haber enviado el e-book, si no hubo conversión,
-    envía invitación a adquirir "El Método".
+    A los 6 días de haber enviado el e-book (no terapia),
+    si no hubo conversión, envía invitación a adquirir "El Método".
     """
     def tarea():
         if not verificar_conversion(numero):
             mensaje = (
                 "Hola, espero estés disfrutando de \"El libro de la sabiduría\" 📘✨\n\n"
-                "Si te ha parecido fascinante, te invito a que adquieras \"El Método\", la novela que explica la cura "
-                "y la sanación a todas las enfermedades. El texto médico más avanzado del siglo XXI."
+                "Si te ha parecido fascinante, te invito a que adquieras \"El Método\", "
+                "la novela que explica la cura y la sanación a todas las enfermedades. "
+                "El texto médico más avanzado del siglo XXI."
             )
             enviar_mensaje_whatsapp(numero, mensaje)
             seguimiento_dia7(numero)
     threading.Timer(6 * 86400, tarea).start()
+
 
 def seguimiento_dia7(numero):
     """
@@ -63,16 +70,17 @@ def seguimiento_dia7(numero):
         if not verificar_conversion(numero):
             mensaje = (
                 "📹 Si lo tuyo no es leer, te recomiendo tomes el curso basado en el libro \"El Método\".\n\n"
-                "Explicaremos cada técnica de sanación para cada enfermedad y regeneración celular contra el envejecimiento, "
-                "con videos didácticos. ¡No dejes pasar esta oportunidad!"
+                "Explicaremos cada técnica de sanación para cada enfermedad y regeneración celular "
+                "contra el envejecimiento, con videos didácticos. ¡No dejes pasar esta oportunidad!"
             )
             enviar_mensaje_whatsapp(numero, mensaje)
     threading.Timer(7 * 86400, tarea).start()
 
+
 def seguimiento_no_conversion(numero):
     """
-    A las 24 horas de que el usuario preguntó sin comprar, envía oferta de consulta gratuita
-    (viernes y sábado si sacrifica su sustento).
+    A las 24 horas de que el usuario preguntó sin comprar,
+    envía oferta de consulta gratuita (viernes y sábado si sacrifica su sustento).
     """
     def tarea():
         if not verificar_conversion(numero):
@@ -89,13 +97,30 @@ def seguimiento_no_conversion(numero):
             enviar_mensaje_whatsapp(numero, mensaje)
     threading.Timer(86400, tarea).start()  # 86400 segundos = 24 horas
 
+
+# ——————————————————————————————
+# RUTA GET para /webhook: responde 200 para evitar 404 en verificaciones
+@app.route("/webhook", methods=["GET"])
+def recibir_webhook_get():
+    return jsonify({"message": "Webhook endpoint is alive"}), 200
+
+
+# RUTA POST principal para /webhook (WooCommerce)
 @app.route("/webhook", methods=["POST"])
 def recibir_webhook():
-    """
-    Webhook que recibe eventos de WooCommerce cuando se crea o paga un pedido.
-    Determina si el producto es una terapia o no, y envía el mensaje correspondiente.
-    """
-    data = request.get_json()
+    # 1) Intentamos leer JSON directamente
+    if request.is_json:
+        data = request.get_json()
+    else:
+        # 2) Si no es JSON, verificamos si WooCommerce envía form-data con campo "payload"
+        payload_text = request.form.get("payload")
+        if payload_text:
+            data = json.loads(payload_text)
+        else:
+            # Si no hay JSON ni campo "payload", devolvemos 400 Bad Request
+            return jsonify({"error": "No se encontró JSON ni campo 'payload'"}), 400
+
+    # A partir de aquí, 'data' es un dict con el contenido del pedido de WooCommerce
     try:
         numero = data["billing"]["phone"]       # ej. "5512345678"
         nombre = data["billing"]["first_name"]
@@ -103,6 +128,7 @@ def recibir_webhook():
         es_terapia = any(p in PRODUCTOS_TERAPIA for p in productos)
 
         if es_terapia:
+            # Si compró una terapia, enviamos horarios disponibles
             slots = get_available_slots()
             mensaje = (
                 f"Hola {nombre}, gracias por agendar tu terapia 🧘‍♀️✨\n\n"
@@ -113,8 +139,8 @@ def recibir_webhook():
             mensaje += "\nResponde con el horario que prefieras para reservarlo."
             enviar_mensaje_whatsapp(numero, mensaje)
             marcar_conversion(numero)
-
         else:
+            # Si NO es terapia, enviamos el e-book gratuito
             mensaje = (
                 f"Hola {nombre}, gracias por tu compra 🛍️✨\n\n"
                 "Te obsequiamos un e-book: 📘 \"El libro de la sabiduría\".\n"
@@ -129,28 +155,32 @@ def recibir_webhook():
 
     except Exception as e:
         print("Error en Webhook:", e)
-        return jsonify({"status": "error", "details": str(e)}), 400
+        return jsonify({"status": "error", "detail": str(e)}), 500
 
+
+# ——————————————————————————————
+# RUTA GET para /incoming: responde 200 para evitar 404 en verificaciones
+@app.route("/incoming", methods=["GET"])
+def incoming_whatsapp_get():
+    return jsonify({"message": "Incoming endpoint alive"}), 200
+
+
+# RUTA POST principal para /incoming (Twilio WhatsApp)
 @app.route("/incoming", methods=["POST"])
 def incoming_whatsapp():
-    """
-    Endpoint para procesar mensajes entrantes de Twilio Sandbox para WhatsApp.
-    Incluye lógica para:
-      - Oferta gratuita y agendado de viernes/sábado.
-      - Confirmación de horario gratuito.
-      - Envío de videos e invitación a compra con recordatorio en 1h.
-      - Respuestas mediante IA o reglas para otros casos.
-    """
     numero_prefijo = request.form.get("From")    # ej. "whatsapp:+5215512345678"
+    if not numero_prefijo:
+        return jsonify({"error": "No se recibió parámetro From"}), 400
+
     numero = numero_prefijo.replace("whatsapp:", "")
-    texto = request.form.get("Body").strip().lower()
+    texto = request.form.get("Body", "").strip().lower()
 
     # Si existe un timer de recordatorio para este número, lo cancelamos
     if numero in recordatorios_compra:
         recordatorios_compra[numero].cancel()
         recordatorios_compra.pop(numero, None)
 
-    # -- Caso A: Usuario acepta oferta gratuita (“sí”, “me gustaría”) --
+    # — Caso A: Usuario acepta oferta gratuita (“sí” o “me gustaría”) —
     if "sí" in texto or texto == "si" or "me gustaría" in texto:
         slots = get_available_slots()
         disponibles_f_v = [
@@ -171,7 +201,7 @@ def incoming_whatsapp():
             enviar_mensaje_whatsapp(numero, mensaje)
         return "", 200
 
-    # -- Caso B: Usuario responde con un horario válido (“YYYY-MM-DD HH:MM”) --
+    # — Caso B: Usuario responde con un horario válido (“YYYY-MM-DD HH:MM”) —
     try:
         elegido = datetime.strptime(texto, "%Y-%m-%d %H:%M")
         crear_evento_google_calendar(numero, texto, gratuito=True)
@@ -181,7 +211,7 @@ def incoming_whatsapp():
     except:
         pass
 
-    # -- Caso C: Usuario pregunta por “consulta” o “terapia” sin haber comprado --
+    # — Caso C: Usuario pregunta por “consulta” o “terapia” sin haber comprado —
     if "consulta" in texto or "terapia" in texto:
         guardar_usuario_temporal(numero)
         seguimiento_no_conversion(numero)
@@ -209,10 +239,11 @@ def incoming_whatsapp():
 
         return "", 200
 
-    # -- Caso D: Cualquier otra cosa → IA o reglas --
+    # — Caso D: Cualquier otra cosa → IA o reglas —
     respuesta = responder_con_ia(texto, numero)
     enviar_mensaje_whatsapp(numero, respuesta)
     return "", 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
