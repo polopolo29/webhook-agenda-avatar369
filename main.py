@@ -17,19 +17,19 @@ from chatbot_agent import responder_con_ia
 
 app = Flask(__name__)
 
-# Lista de nombres de productos que consideramos "terapias"
+# Nombres de productos que consideramos “terapias”
 PRODUCTOS_TERAPIA = [
     "Tratamiento completo 3 sesiones",
     "Terapia individual"
 ]
 
-# Diccionario para guardar timers de recordatorio de compra en curso
+# Para programar recordatorios de compra en curso
 recordatorios_compra = {}  # clave: número, valor: threading.Timer
 
 
 def enviar_recordatorio_compra(numero):
     """
-    Se llama 1 hora después de haber enviado los videos al usuario sin compra.
+    Se llama 1 hora después de haber enviado los videos sin compra.
     Envía el enlace para comprar la terapia individual.
     """
     mensaje = (
@@ -39,14 +39,13 @@ def enviar_recordatorio_compra(numero):
         "¡No dudes más, estás a punto de sanar! 🌟"
     )
     enviar_mensaje_whatsapp(numero, mensaje)
-    # Eliminamos el timer de la memoria para no repetir
-    recordatorios_compra.pop(numero, None)
+    recordatorios_compra.pop(numero, None)  # Elimina timer
 
 
 def seguimiento_dia6(numero):
     """
-    A los 6 días de haber enviado el e-book (no terapia),
-    si no hubo conversión, envía invitación a adquirir "El Método".
+    A los 6 días de haber enviado el e-book (si no fue terapia),
+    si no hubo conversión, envía invitación a comprar “El Método”.
     """
     def tarea():
         if not verificar_conversion(numero):
@@ -58,13 +57,13 @@ def seguimiento_dia6(numero):
             )
             enviar_mensaje_whatsapp(numero, mensaje)
             seguimiento_dia7(numero)
-    threading.Timer(6 * 86400, tarea).start()
+    threading.Timer(6 * 86400, tarea).start()  # 6 días
 
 
 def seguimiento_dia7(numero):
     """
     A los 7 días de haber enviado el e-book, si no hubo conversión,
-    envía invitación al curso basado en "El Método".
+    envía invitación al curso basado en “El Método”.
     """
     def tarea():
         if not verificar_conversion(numero):
@@ -74,13 +73,13 @@ def seguimiento_dia7(numero):
                 "contra el envejecimiento, con videos didácticos. ¡No dejes pasar esta oportunidad!"
             )
             enviar_mensaje_whatsapp(numero, mensaje)
-    threading.Timer(7 * 86400, tarea).start()
+    threading.Timer(7 * 86400, tarea).start()  # 7 días
 
 
 def seguimiento_no_conversion(numero):
     """
     A las 24 horas de que el usuario preguntó sin comprar,
-    envía oferta de consulta gratuita (viernes y sábado si sacrifica su sustento).
+    envía oferta de consulta gratuita (viernes o sábado si sacrifica su sustento).
     """
     def tarea():
         if not verificar_conversion(numero):
@@ -95,11 +94,11 @@ def seguimiento_no_conversion(numero):
                 "¿Le gustaría tomar gratis una consulta?"
             )
             enviar_mensaje_whatsapp(numero, mensaje)
-    threading.Timer(86400, tarea).start()  # 86400 segundos = 24 horas
+    threading.Timer(86400, tarea).start()  # 24 horas
 
 
-# ——————————————————————————————
-# RUTA GET para /webhook: responde 200 para evitar 404 en verificaciones
+# ————————————————————————————————————————————————————————
+# RUTA GET mínima para /webhook: devuelve 200 para evitar 404 en pruebas
 @app.route("/webhook", methods=["GET"])
 def recibir_webhook_get():
     return jsonify({"message": "Webhook endpoint is alive"}), 200
@@ -108,27 +107,31 @@ def recibir_webhook_get():
 # RUTA POST principal para /webhook (WooCommerce)
 @app.route("/webhook", methods=["POST"])
 def recibir_webhook():
-    # 1) Intentamos leer JSON directamente
+    # 0) Si el POST viene vacío (Delivery Test de WooCommerce), devolvemos 200 sin más
+    if not request.data or request.data == b"":
+        return jsonify({"status": "ok"}), 200
+
+    # 1) Intentar leer JSON directamente
     if request.is_json:
         data = request.get_json()
     else:
-        # 2) Si no es JSON, verificamos si WooCommerce envía form-data con campo "payload"
+        # 2) Si no es JSON, verifica si WooCommerce envía form-data con campo "payload"
         payload_text = request.form.get("payload")
         if payload_text:
             data = json.loads(payload_text)
         else:
-            # Si no hay JSON ni campo "payload", devolvemos 400 Bad Request
+            # Si no hay JSON ni campo “payload”, consideramos que es un POST inválido
             return jsonify({"error": "No se encontró JSON ni campo 'payload'"}), 400
 
-    # A partir de aquí, 'data' es un dict con el contenido del pedido de WooCommerce
+    # A partir de aquí, ‘data’ es un diccionario con el pedido
     try:
-        numero = data["billing"]["phone"]       # ej. "5512345678"
+        numero = data["billing"]["phone"]       # ej. "5215512345678"
         nombre = data["billing"]["first_name"]
         productos = [item["name"] for item in data["line_items"]]
         es_terapia = any(p in PRODUCTOS_TERAPIA for p in productos)
 
         if es_terapia:
-            # Si compró una terapia, enviamos horarios disponibles
+            # 3a) Si compró terapia, enviar horarios disponibles
             slots = get_available_slots()
             mensaje = (
                 f"Hola {nombre}, gracias por agendar tu terapia 🧘‍♀️✨\n\n"
@@ -139,8 +142,9 @@ def recibir_webhook():
             mensaje += "\nResponde con el horario que prefieras para reservarlo."
             enviar_mensaje_whatsapp(numero, mensaje)
             marcar_conversion(numero)
+
         else:
-            # Si NO es terapia, enviamos el e-book gratuito
+            # 3b) Si NO es terapia, enviar e-book gratuito
             mensaje = (
                 f"Hola {nombre}, gracias por tu compra 🛍️✨\n\n"
                 "Te obsequiamos un e-book: 📘 \"El libro de la sabiduría\".\n"
@@ -158,8 +162,8 @@ def recibir_webhook():
         return jsonify({"status": "error", "detail": str(e)}), 500
 
 
-# ——————————————————————————————
-# RUTA GET para /incoming: responde 200 para evitar 404 en verificaciones
+# ————————————————————————————————————————————————————————
+# RUTA GET mínima para /incoming: devuelve 200 para evitar 404 en pruebas
 @app.route("/incoming", methods=["GET"])
 def incoming_whatsapp_get():
     return jsonify({"message": "Incoming endpoint alive"}), 200
@@ -175,7 +179,7 @@ def incoming_whatsapp():
     numero = numero_prefijo.replace("whatsapp:", "")
     texto = request.form.get("Body", "").strip().lower()
 
-    # Si existe un timer de recordatorio para este número, lo cancelamos
+    # Si hay un timer de recordatorio para este número, lo cancelamos
     if numero in recordatorios_compra:
         recordatorios_compra[numero].cancel()
         recordatorios_compra.pop(numero, None)
