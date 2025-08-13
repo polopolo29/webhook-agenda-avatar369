@@ -1,0 +1,67 @@
+.main-header {
+  background-color: #1f1f1f; /* Un poco más claro que el fondo principal */
+  padding: 15px 40px;
+  border-bottom: 1px solid #333;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo a {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.main-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 30px;
+}
+
+.main-nav a {
+  color: #EAEAEA;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 5px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.3s ease, border-bottom-color 0.3s ease;
+}
+
+.main-nav a:hover,
+.main-nav a.active {
+  color: #03dac6; /* Color de acento */
+  border-bottom-color: #03dac6;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: #EAEAEA;
+}
+
+.login-button {
+  background-color: #03dac6;
+  color: #121212;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #018786;
+}

@@ -1,0 +1,60 @@
+.featured-packages {
+  padding: 60px 40px;
+  background-color: #121212;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: #ffffff;
+}
+
+.packages-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.package-card {
+  background-color: #1f1f1f;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #333;
+}
+
+.package-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(3, 218, 198, 0.1); /* Sutil brillo del color de acento */
+}
+
+.package-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.package-info {
+  padding: 20px;
+}
+
+.package-info h3 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  color: #ffffff;
+}
+
+.package-info p {
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.package-price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #03dac6;
+}
