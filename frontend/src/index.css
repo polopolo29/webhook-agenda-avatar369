@@ -1,0 +1,38 @@
+/* Estilos Globales y Tema Oscuro */
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* === Tema Oscuro y Elegante === */
+  background-color: #121212; /* Fondo carbón oscuro, no negro puro */
+  color: #EAEAEA; /* Texto gris claro para legibilidad */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  /* Se puede usar una fuente más elegante para los encabezados */
+  font-family: 'Montserrat', sans-serif; /* Ejemplo, se podría importar de Google Fonts */
+}
+
+a {
+  color: #03dac6; /* Un color cian vibrante para acentos y enlaces */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #1f1f1f;
+  padding: 40px 20px;
+  border-bottom: 1px solid #333;
+}
