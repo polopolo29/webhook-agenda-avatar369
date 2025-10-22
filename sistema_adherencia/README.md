@@ -127,3 +127,34 @@ Se recomienda el consumo de nopales y aguacate...
       "message": "Hemos completado el protocolo..."
     }
     ```
+
+---
+
+## Plugin de WordPress
+
+El proyecto incluye un plugin de WordPress simple para integrar el asistente en un sitio web.
+
+### Instalación del Plugin
+
+1.  **Comprimir el Plugin:**
+    Navega a la raíz del proyecto y comprime el directorio `wordpress-plugin` en un archivo `.zip`.
+    ```bash
+    zip -r wordpress-plugin.zip wordpress-plugin/
+    ```
+
+2.  **Subir a WordPress:**
+    -   Ve al panel de administración de WordPress.
+    -   Navega a `Plugins > Añadir nuevo > Subir plugin`.
+    -   Selecciona el archivo `wordpress-plugin.zip` que acabas de crear y haz clic en "Instalar ahora".
+    -   Activa el plugin después de la instalación.
+
+3.  **Configuración (IMPORTANTE):**
+    -   Abre el archivo `wordpress-plugin/asistente-medico.php`.
+    -   En la línea `define('ASISTENTE_API_URL', 'http://127.0.0.1:5001');`, reemplaza la URL con la dirección IP pública o el dominio de tu servidor donde se está ejecutando el backend de Python. El plugin no funcionará si no puede acceder a esta URL.
+
+### Uso del Shortcode
+
+Para mostrar el asistente de chat en cualquier página o entrada, simplemente añade el siguiente shortcode al editor de contenido:
+```
+[asistente_medico_pdf]
+```

@@ -1,0 +1,91 @@
+/* Estilos Generales del Contenedor del Chat */
+#asistente-medico-chat-container {
+    font-family: Arial, sans-serif;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    max-width: 600px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    height: 500px; /* Altura fija para el contenedor */
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Área de Mensajes */
+#asistente-medico-messages {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto; /* Habilitar scroll vertical */
+    background-color: #f9f9f9;
+}
+
+/* Estilo de cada burbuja de mensaje */
+.asistente-medico-message {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+.asistente-medico-message p {
+    margin: 0;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+/* Mensajes del Bot */
+.asistente-medico-message-bot p {
+    background-color: #e5e5ea;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+/* Mensajes del Usuario */
+.asistente-medico-message-user p {
+    background-color: #007aff;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+/* Área de Entrada de Texto */
+#asistente-medico-input-area {
+    border-top: 1px solid #ccc;
+    background-color: #fff;
+}
+#asistente-medico-form {
+    display: flex;
+    padding: 10px;
+}
+#asistente-medico-input {
+    flex-grow: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 10px 15px;
+    font-size: 16px;
+}
+#asistente-medico-input:disabled {
+    background-color: #f5f5f5;
+}
+
+#asistente-medico-submit {
+    background-color: #007aff;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+#asistente-medico-submit:disabled {
+    background-color: #a0c8f0;
+    cursor: not-allowed;
+}
+
+/* Estilos para el texto formateado */
+.asistente-medico-message p strong {
+    font-weight: bold;
+}

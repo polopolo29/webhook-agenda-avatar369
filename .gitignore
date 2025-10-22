@@ -1,9 +1,21 @@
-env/
-credentials.json
-token.json
-.env
-usuarios_temp.json
-conversiones.json
+# Archivos de log
+*.log
+
+# Directorio de sesiones
+sessions/
+sistema_adherencia/sessions/
+
+# Archivos temporales de prueba
+session_id.txt
+
+# Directorios de cache de Python
 __pycache__/
 *.pyc
 
+# Entornos virtuales
+venv/
+.venv/
+
+# Archivos de IDE
+.idea/
+.vscode/
