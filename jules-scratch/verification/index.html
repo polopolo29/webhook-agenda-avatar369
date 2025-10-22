@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Chat Plugin</title>
+    <link rel="stylesheet" href="../../wordpress-plugin/css/chat-style.css">
+</head>
+<body>
+    <h1>Página de Prueba del Asistente Médico</h1>
+    <div id="asistente-medico-chat-container">
+        <div id="chat-box"></div>
+        <input type="text" id="chat-input" placeholder="Escribe tu mensaje aquí...">
+        <button id="chat-send">Enviar</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Mock the wp_localize_script object
+        const chat_settings = {
+            api_url: 'http://127.0.0.1:5000/chat'
+        };
+    </script>
+    <script src="../../wordpress-plugin/js/chat.js"></script>
+</body>
+</html>

@@ -1,9 +1,13 @@
-env/
-credentials.json
-token.json
-.env
-usuarios_temp.json
-conversiones.json
+# Logs
+logs/
+*.log
+
+# Session files
+sessions/
+*.json
+
+# Python cache
 __pycache__/
 *.pyc
-
+*.pyo
+*.pyd
